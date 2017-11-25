@@ -301,25 +301,22 @@ describe('Driver', function() {
 
   });
 
-  describe('MetaData', function() {
-    const meta = pool.metaData();
-    meta
-  });
+  describe('Finalize', function() {
 
-  it('shutdown pool', function(done) {
-    pool.close(done);
-  });
+    it('shutdown pool', function(done) {
+      pool.close(done);
+    });
 
-  it('should closed connection ignore close()', function(done) {
-    client1.close(done);
-  });
+    it('should closed connection ignore close()', function(done) {
+      client1.close(done);
+    });
 
-  it('should not call execute on closed connection', function(done) {
-    client1.execute('', [], {}, function(err) {
-      if (err)
-        return done();
-      done(new Error('Failed'));
+    it('should not call execute on closed connection', function(done) {
+      client1.execute('', [], {}, function(err) {
+        if (err)
+          return done();
+        done(new Error('Failed'));
+      });
     });
   });
-
 });

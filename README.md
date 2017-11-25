@@ -10,122 +10,22 @@ SQLite connection adapter for [SQB](https://github.com/panates/sqb).
 
 ## Configuring
 
-### Authentication options
-
-#### Internal Authentication
-
-Applications using internal authentication stores credentials manually and passes `user` and `password` properties in configuration object.
-
 ```js
-sqb.use('sqb-connect-sqlite');
+const sqlitedriver= require('sqb-connect-sqlite');
+sqb.use(sqlitedriver);
+
 const pool = sqb.pool({
   dialect: 'sqlite',
-  user: 'anyuser',
-  password: 'anypassword',
-  ....
+  database: 'dbfile.db',
+  mode: sqlitedriver.OPEN_READONLY,
+  busyTimeout: 30000
 })
 ```
 
-#### External Authentication
+- `database`: Valid values are filenames, ":memory:" for an anonymous in-memory database and an empty string for an anonymous disk-based database. Anonymous databases are not persisted and when closing the database handle, their contents are lost.
+- `mode`: (optional): One or more of OPEN_READONLY, OPEN_READWRITE and OPEN_CREATE. The default value is OPEN_READWRITE | OPEN_CREATE.
+- `busyTimeout`: Provide an integer as a value. Sets the [busy timeout](https://www.sqlite.org/c3ref/busy_timeout.html)
 
-External Authentication allows applications to use an external password store (such as sqlite Wallet), the Secure Socket Layer (SSL), or the operating system to validate user access. One of the benefits is that database credentials do not need to be hard coded in the application.
-
-To use external authentication, set the `externalAuth` property to true. (Default false)
-
-```js
-sqb.use('sqb-connect-sqlite');
-const pool = sqb.pool({
-  dialect: 'sqlite',
-  externalAuth: true
-  ....
-})
-```
-
-### Connection configuration options
-
-#### Configure using connection parameters
-
-```js
-sqb.use('sqb-connect-sqlite');
-const pool = sqb.pool({
-  dialect: 'sqlite',
-  ** Authentication options here 
-  host: 'localhost',
-  port: 1521,
-  database: 'SALES'
-})
-```
-
-- `host`: Hostname to connect to
-- `port`: Port to connect to (default: 1521)
-- `database`: Database (service name) to connect to (Optional)
-- `serverType`: Type of server (Optional)
-- `instanceName`: Instance name (Optional)
-
-
-#### Configure using easy connection syntax
-
-An Easy Connect string is often the simplest to use. With sqlite Database 12c the syntax is:
-
-`[//]host[:port][/database][:serverType][/instanceName]`
-
-```js
-sqb.use('sqb-connect-sqlite');
-const pool = sqb.pool({
-  dialect: 'sqlite',
-  ** Authentication options here 
-  connectString: 'localhost:1521/SALES'
-})
-```
-
-#### Configure using Net service name
-
-A Net Service Name, such as sales in the example below, can be used to connect:
-
-```js
-sqb.use('sqb-connect-sqlite');
-const pool = sqb.pool({
-  dialect: 'sqlite',
-  ** Authentication options here 
-  connectString: 'sales'
-})
-```
-
-This could be defined in a directory server, or in a local tnsnames.ora file, for example:
-```
-sales =
-  (DESCRIPTION =
-    (ADDRESS = (PROTOCOL = TCP)(HOST = mymachine.example.com)(PORT = 1521))
-    (CONNECT_DATA =
-      (SERVER = DEDICATED)
-      (SERVICE_NAME = orcl)
-    )
-  )
-```
-
-#### Configure using full connection strings
-
-```js
-sqb.use('sqb-connect-sqlite');
-const pool = sqb.pool({
-  dialect: 'sqlite',
-  ** Authentication options here 
-  connectString: '(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=mymachine.example.com)(PORT=1521))(CONNECT_DATA=(SERVER=DEDICATED)(SERVICE_NAME=orcl)))'
-})
-```
-
-### Additional parameters
-
-```js
-sqb.use('sqb-connect-sqlite');
-const pool = sqb.pool({
-  dialect: 'sqlite',
-  ** Connection options here 
-  schema: 'otherschema'
-})
-```
-
-- `schema`: Sets default schema for session
 
 ## Node Compatibility
 
