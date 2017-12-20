@@ -4,7 +4,7 @@ module.exports = {
       'ID TEXT PRIMARY KEY,' +
       'ShortName TEXT,' +
       'Name TEXT,' +
-      'Region TEXT,' +
+      'Region TEXT(64),' +
       'ICAO TEXT,' +
       'Flags INTEGER,' +
       'Catalog INTEGER,' +
@@ -14,7 +14,7 @@ module.exports = {
       'Frequency NUMBER,' +
       'Latitude TEXT,' +
       'Longitude TEXT,' +
-      'CONSTRAINT fk_airport_region FOREIGN KEY (region) REFERENCES regisons(id))'),
+      'CONSTRAINT fk_airport_region FOREIGN KEY (region) REFERENCES regions(id))'),
   insertSql: 'INSERT INTO AIRPORTS (ID,ShortName,Name,Region,ICAO,Flags,Catalog,Length,Elevation,Runway,Frequency,Latitude,Longitude) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)',
   rows: [
     {

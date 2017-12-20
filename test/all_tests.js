@@ -2,7 +2,8 @@
 const assert = require('assert');
 const sqb = require('sqb');
 const createTable = require('./support/createTable');
-const airportsTable = require('./support/table_airports');
+const tableRegions = require('./support/table_regions');
+const tableAirports = require('./support/table_airports');
 const waterfall = require('putil-waterfall');
 
 sqb.use(require('../'));
@@ -11,6 +12,7 @@ describe('Driver', function() {
 
   var pool;
   var client1;
+  var table;
 
   after(function() {
     pool.close(true);
@@ -45,10 +47,18 @@ describe('Driver', function() {
       pool.connect(function(err, connection) {
         if (err)
           return done(err);
-        createTable(connection._client.client, airportsTable, function(err) {
-          connection.release();
-          done(err);
-        });
+        waterfall.every(
+            [tableRegions, tableAirports],
+            function(next, table) {
+              createTable(connection._client.client, table, function(err) {
+                if (err)
+                  return next(err);
+                next();
+              });
+            }, function(err) {
+              connection.release();
+              done(err);
+            });
       });
     });
 
@@ -56,7 +66,7 @@ describe('Driver', function() {
       pool.test(done);
     });
 
-    it('should fetch test table (rowset)', function(done) {
+    it('should fetch "airports" table (rows)', function(done) {
       var k = 0;
       pool.select()
           .from('airports')
@@ -65,12 +75,12 @@ describe('Driver', function() {
             if (err)
               return done(err);
             try {
-              const rowset = result.rowset;
-              assert(rowset);
-              assert.equal(rowset.length, 100);
-              while (rowset.next()) {
-                assert.equal(rowset.row[0], airportsTable.rows[k++].ID);
-              }
+              const rows = result.rows;
+              assert(rows);
+              assert.equal(rows.length, 100);
+              rows.forEach(function(row) {
+                assert.equal(row[0], tableAirports.rows[k++].ID);
+              });
               assert(k, 100);
               done();
             } catch (e) {
@@ -79,7 +89,7 @@ describe('Driver', function() {
           });
     });
 
-    it('should fetch test table (rowset, objectRows)', function(done) {
+    it('should fetch "airports" table (rows, objectRows)', function(done) {
       var k = 0;
       pool.select()
           .from('airports')
@@ -88,12 +98,12 @@ describe('Driver', function() {
             if (err)
               return done(err);
             try {
-              const rowset = result.rowset;
-              assert(rowset);
-              assert.equal(rowset.length, 100);
-              while (rowset.next()) {
-                assert.equal(rowset.row.ID, airportsTable.rows[k++].ID);
-              }
+              const rows = result.rows;
+              assert(rows);
+              assert.equal(rows.length, 100);
+              rows.forEach(function(row) {
+                assert.equal(row.ID, tableAirports.rows[k++].ID);
+              });
               assert(k, 100);
               done();
             } catch (e) {
@@ -119,7 +129,7 @@ describe('Driver', function() {
                   return done();
                 try {
                   assert.equal(cursor.row, row);
-                  assert.equal(cursor.row[0], airportsTable.rows[k++].ID);
+                  assert.equal(cursor.row[0], tableAirports.rows[k++].ID);
                   more();
                 } catch (e) {
                   done(e);
@@ -152,7 +162,7 @@ describe('Driver', function() {
                   return done();
                 try {
                   assert.equal(cursor.row, row);
-                  assert.equal(cursor.row.ID, airportsTable.rows[k++].ID);
+                  assert.equal(cursor.row.ID, tableAirports.rows[k++].ID);
                   more();
                 } catch (e) {
                   done(e);
@@ -177,13 +187,11 @@ describe('Driver', function() {
           pool.select()
               .from('airports')
               .where(['ID', 'LFOI'])
-              .execute(function(err, result) {
+              .execute({objectRows: true}, function(err, result) {
                 if (err)
                   return next(err);
                 try {
-                  const rowset = result.rowset;
-                  assert(rowset.next());
-                  assert.equal(rowset.get('catalog'), 1234);
+                  assert.equal(result.rows[0].Catalog, 1234);
                 } catch (e) {
                   return next(e);
                 }
@@ -222,13 +230,11 @@ describe('Driver', function() {
           pool.select()
               .from('airports')
               .where(['ID', 'LFBA'])
-              .execute(function(err, result) {
+              .execute({objectRows: true}, function(err, result) {
                 if (err)
                   return next(err);
                 try {
-                  const rowset = result.rowset;
-                  assert(rowset.next());
-                  assert.equal(rowset.get('catalog'), null);
+                  assert.equal(result.rows[0].Catalog, null);
                 } catch (e) {
                   return next(e);
                 }
@@ -297,6 +303,80 @@ describe('Driver', function() {
           });
         });
       });
+    });
+
+  });
+
+  describe('Meta-Data', function() {
+
+    it('should select().from(schemas) return empty rows ', function() {
+      return pool.metaData.select()
+          .from('schemas')
+          .then({objectRows: true}, function(result) {
+            assert.equal(result.rows.length, 0);
+          });
+    });
+
+    it('should select tables', function() {
+      return pool.metaData.select()
+          .from('tables')
+          .then({objectRows: true}, function(result) {
+            assert.equal(result.rows.length, 2);
+            assert.equal(result.rows[0].table_name, 'AIRPORTS');
+          });
+    });
+
+    it('should select columns', function() {
+      return pool.metaData.select()
+          .from('columns')
+          .then({objectRows: true}, function(result) {
+            assert.equal(result.rows.length, 15);
+            assert.equal(result.rows[0].column_name, 'ID');
+          });
+    });
+
+    it('should select primary keys', function() {
+      return pool.metaData.select()
+          .from('primary_keys')
+          .then({objectRows: true}, function(result) {
+            assert.equal(result.rows.length, 2);
+            assert.equal(result.rows[0].columns, 'ID');
+          });
+    });
+
+    it('should select foreign keys', function() {
+      return pool.metaData.select()
+          .from('foreign_keys')
+          .then({objectRows: true}, function(result) {
+            assert.equal(result.rows.length, 1);
+            assert.equal(result.rows[0].column, 'REGION');
+            assert.equal(result.rows[0].foreign_table, 'REGIONS');
+            assert.equal(result.rows[0].foreign_columns, 'ID');
+          });
+    });
+
+    it('should get schema objects with metaData.getSchemas()', function() {
+      return pool.metaData.getSchemas()
+          .then(function(schemas) {
+            assert.equal(schemas.length, 0);
+          });
+    });
+
+    it('should get table objects with metaData.getTables()', function() {
+      return pool.metaData.getTables()
+          .then(function(tables) {
+            assert.equal(tables.length, 2);
+            table = tables[0];
+            assert.equal(table.meta.table_name, 'AIRPORTS');
+          });
+    });
+
+    it('should fetch table info', function() {
+      return table.refresh()
+          .then(function() {
+            assert.equal(table.columns.ID.column_name, 'ID');
+            assert.equal(table.primaryKey.columns, 'ID');
+          });
     });
 
   });
