@@ -371,12 +371,48 @@ describe('Driver', function() {
           });
     });
 
-    it('should fetch table info', function() {
-      return table.refresh()
-          .then(function() {
-            assert.equal(table.columns.ID.column_name, 'ID');
-            assert.equal(table.primaryKey.columns, 'ID');
-          });
+    it('should get table columns', function(done) {
+      table.getColumns(function(err, result) {
+        if (err)
+          return done(err);
+        try {
+          assert(result);
+          assert(result.ID);
+          assert.equal(result.ID.data_type, 'TEXT');
+          done();
+        } catch (e) {
+          done(e);
+        }
+      });
+    });
+
+    it('should get table primary key', function(done) {
+      table.getPrimaryKey(function(err, result) {
+        if (err)
+          return done(err);
+        try {
+          assert(result);
+          assert.equal(result.columns, 'ID');
+          done();
+        } catch (e) {
+          done(e);
+        }
+      });
+    });
+
+    it('should get table foreign keys', function(done) {
+      table.getForeignKeys(function(err, result) {
+        if (err)
+          return done(err);
+        try {
+          assert(result);
+          assert(result.length);
+          assert.equal(result[0].column, 'REGION');
+          done();
+        } catch (e) {
+          done(e);
+        }
+      });
     });
 
   });
