@@ -340,7 +340,7 @@ describe('Driver', function() {
           .from('primary_keys')
           .then({objectRows: true}, function(result) {
             assert.equal(result.rows.length, 2);
-            assert.equal(result.rows[0].columns, 'ID');
+            assert.equal(result.rows[0].column_names, 'ID');
           });
     });
 
@@ -349,9 +349,9 @@ describe('Driver', function() {
           .from('foreign_keys')
           .then({objectRows: true}, function(result) {
             assert.equal(result.rows.length, 1);
-            assert.equal(result.rows[0].column, 'REGION');
-            assert.equal(result.rows[0].foreign_table, 'REGIONS');
-            assert.equal(result.rows[0].foreign_columns, 'ID');
+            assert.equal(result.rows[0].column_name, 'REGION');
+            assert.equal(result.rows[0].foreign_table_name, 'REGIONS');
+            assert.equal(result.rows[0].foreign_column_name, 'ID');
           });
     });
 
@@ -392,7 +392,7 @@ describe('Driver', function() {
           return done(err);
         try {
           assert(result);
-          assert.equal(result.columns, 'ID');
+          assert.equal(result.column_names, 'ID');
           done();
         } catch (e) {
           done(e);
@@ -407,7 +407,7 @@ describe('Driver', function() {
         try {
           assert(result);
           assert(result.length);
-          assert.equal(result[0].column, 'REGION');
+          assert.equal(result[0].column_name, 'REGION');
           done();
         } catch (e) {
           done(e);
