@@ -8,20 +8,23 @@ const waterfall = require('putil-waterfall');
 
 sqb.use(require('../'));
 
-describe('Driver', function() {
+describe('sqb-connect-sqlite', function() {
 
   var pool;
   var client1;
   var table;
+  var Op = sqb.Op;
+  var metaData;
 
   after(function() {
-    pool.close(true);
+    if (pool)
+      pool.close(true);
   });
 
   describe('Driver', function() {
 
     it('should initialize pool with sqlite driver', function() {
-      pool = new sqb.Pool({
+      pool = sqb.pool({
         dialect: 'sqlite',
         database: ':memory:',
         pool: {
@@ -177,16 +180,15 @@ describe('Driver', function() {
     it('should commit transaction by default', function(done) {
       waterfall([
         function(next) {
-          pool.update('airports')
-              .set({Catalog: 1234})
-              .where(['ID', 'LFOI'])
+          pool.update('airports', {Catalog: 1234})
+              .where(Op.eq('ID', 'LFOI'))
               .execute(next);
         },
 
         function(next) {
           pool.select()
               .from('airports')
-              .where(['ID', 'LFOI'])
+              .where(Op.eq('ID', 'LFOI'))
               .execute({objectRows: true}, function(err, result) {
                 if (err)
                   return next(err);
@@ -215,9 +217,8 @@ describe('Driver', function() {
         },
 
         function(next) {
-          connection.update('airports')
-              .set({Catalog: 1234})
-              .where(['ID', 'LFBA'])
+          connection.update('airports', {Catalog: 1234})
+              .where(Op.eq('ID', 'LFBA'))
               .execute(next);
         },
 
@@ -229,7 +230,7 @@ describe('Driver', function() {
         function(next) {
           pool.select()
               .from('airports')
-              .where(['ID', 'LFBA'])
+              .where(Op.eq('ID', 'LFBA'))
               .execute({objectRows: true}, function(err, result) {
                 if (err)
                   return next(err);
@@ -309,8 +310,13 @@ describe('Driver', function() {
 
   describe('Meta-Data', function() {
 
+    it('should initialize DBMeta', function() {
+      metaData = new sqb.DBMeta(pool);
+      metaData.invalidate();
+    });
+
     it('should select().from(schemas) return empty rows ', function() {
-      return pool.metaData.select()
+      return metaData.select()
           .from('schemas')
           .then({objectRows: true}, function(result) {
             assert.equal(result.rows.length, 0);
@@ -318,7 +324,7 @@ describe('Driver', function() {
     });
 
     it('should select tables', function() {
-      return pool.metaData.select()
+      return metaData.select()
           .from('tables')
           .then({objectRows: true}, function(result) {
             assert.equal(result.rows.length, 2);
@@ -327,7 +333,7 @@ describe('Driver', function() {
     });
 
     it('should select columns', function() {
-      return pool.metaData.select()
+      return metaData.select()
           .from('columns')
           .then({objectRows: true}, function(result) {
             assert.equal(result.rows.length, 15);
@@ -336,7 +342,7 @@ describe('Driver', function() {
     });
 
     it('should select primary keys', function() {
-      return pool.metaData.select()
+      return metaData.select()
           .from('primary_keys')
           .then({objectRows: true}, function(result) {
             assert.equal(result.rows.length, 2);
@@ -345,7 +351,7 @@ describe('Driver', function() {
     });
 
     it('should select foreign keys', function() {
-      return pool.metaData.select()
+      return metaData.select()
           .from('foreign_keys')
           .then({objectRows: true}, function(result) {
             assert.equal(result.rows.length, 1);
@@ -356,14 +362,14 @@ describe('Driver', function() {
     });
 
     it('should get schema objects with metaData.getSchemas()', function() {
-      return pool.metaData.getSchemas()
+      return metaData.getSchemas()
           .then(function(schemas) {
             assert.equal(schemas.length, 0);
           });
     });
 
     it('should get table objects with metaData.getTables()', function() {
-      return pool.metaData.getTables()
+      return metaData.getTables()
           .then(function(tables) {
             assert.equal(tables.length, 2);
             table = tables[0];
