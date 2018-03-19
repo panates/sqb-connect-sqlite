@@ -1,7 +1,7 @@
 {
   "name": "sqb-connect-sqlite",
   "description": "SQLite connection adapter for SQB",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "author": "Panates Ltd.",
   "contributors": [
     "Eray Hanoglu <e.hanoglu@panates.com>"
