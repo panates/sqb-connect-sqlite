@@ -29,9 +29,10 @@ const pool = sqb.pool({
 - `busyTimeout`: Provide an integer as a value. Sets the [busy timeout](https://www.sqlite.org/c3ref/busy_timeout.html)
 
 
-## Node Compatibility
+## Compatibility
 
-  - node `>= 4.x`;
+  - node `>= 6.x`;
+  - sqb `3.x`;
   
 ### License
 [MIT](LICENSE)

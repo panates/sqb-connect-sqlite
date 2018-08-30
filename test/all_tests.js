@@ -1,8 +1,7 @@
 /* eslint-disable */
 const assert = require('assert');
 const sqb = require('sqb');
-const createTable = require('./support/createTable');
-const tableRegions = require('./support/table_regions');
+const createTestTables = require('./support/createTestTables');
 const tableAirports = require('./support/table_airports');
 const waterfall = require('putil-waterfall');
 
@@ -10,11 +9,10 @@ sqb.use(require('../'));
 
 describe('sqb-connect-sqlite', function() {
 
-  var pool;
-  var client1;
-  var table;
-  var Op = sqb.Op;
-  var metaData;
+  let pool;
+  let client1;
+  let table;
+  let metaData;
 
   after(function() {
     if (pool)
@@ -30,9 +28,17 @@ describe('sqb-connect-sqlite', function() {
         pool: {
           validate: true,
           max: 1
+        },
+        defaults: {
+          objectRows: true,
+          autoCommit: false
         }
       });
       assert(pool.dialect, 'sqlite');
+    });
+
+    it('should test pool', function() {
+      return pool.test();
     });
 
     it('should create a connection', function() {
@@ -44,22 +50,11 @@ describe('sqb-connect-sqlite', function() {
     it('create test tables', function() {
       this.slow(200);
       return pool.acquire(connection => {
-        return waterfall.every([tableRegions, tableAirports],
-            (next, table) => {
-              createTable(connection._client.client, table, (err) => {
-                if (err)
-                  return next(err);
-                next();
-              });
-            });
+        return createTestTables(connection._client.intlcon);
       });
     });
 
-    it('should test pool', function() {
-      return pool.test();
-    });
-
-    it('should fetch "airports" table (rows)', function() {
+    it('should fetch "airports" table (objectRows=false)', function() {
       let k = 0;
       return pool.select()
           .from('airports')
@@ -75,7 +70,7 @@ describe('sqb-connect-sqlite', function() {
           });
     });
 
-    it('should fetch "airports" table (rows, objectRows)', function() {
+    it('should fetch "airports" table (objectRows=true)', function() {
       let k = 0;
       return pool.select()
           .from('airports')
@@ -124,20 +119,6 @@ describe('sqb-connect-sqlite', function() {
           });
     });
 
-    it('should commit transaction by default', function() {
-      return waterfall([
-        () => pool.update('airports', {Catalog: 1234})
-            .where(Op.eq('ID', 'LFOI'))
-            .execute(),
-        () => pool.select()
-            .from('airports')
-            .where(Op.eq('ID', 'LFOI'))
-            .execute({objectRows: true}).then((result) => {
-              assert.equal(result.rows[0].Catalog, 1234);
-            })
-      ]);
-    });
-
     it('should invalid sql return error', function(done) {
       pool.execute('invalid sql').then(() => {
         done(new Error('Failed'));
@@ -173,6 +154,40 @@ describe('sqb-connect-sqlite', function() {
       });
     });
 
+    it('should start transaction when autoCommit is off', function() {
+      return pool.acquire(conn => {
+        return waterfall([
+          () => conn.update('airports', {Catalog: 1234})
+              .where({ID: 'LFOI'})
+              .execute(),
+          () => conn.rollback(),
+          () => conn.select()
+              .from('airports')
+              .where({ID: 'LFOI'})
+              .execute({objectRows: true}).then((result) => {
+                assert.notEqual(result.rows[0].Catalog, 1234);
+              })
+        ]);
+      });
+    });
+
+    it('should not start transaction when autoCommit is on', function() {
+      return pool.acquire({autoCommit: true}, conn => {
+        return waterfall([
+          () => conn.update('airports', {Catalog: 1234})
+              .where({ID: 'LFOI'})
+              .execute(),
+          () => conn.rollback(),
+          () => conn.select()
+              .from('airports')
+              .where({ID: 'LFOI'})
+              .execute({objectRows: true}).then((result) => {
+                assert.equal(result.rows[0].Catalog, 1234);
+              })
+        ]);
+      });
+    });
+
   });
 
   describe('Meta-Data', function() {
@@ -193,8 +208,9 @@ describe('sqb-connect-sqlite', function() {
     it('should select tables', function() {
       return metaData.select()
           .from('tables')
+          .where({table_name: 'AIRPORTS'})
           .execute().then(result => {
-            assert.equal(result.rows.length, 2);
+            assert.equal(result.rows.length, 1);
             assert.equal(result.rows[0].table_name, 'AIRPORTS');
           });
     });
@@ -202,8 +218,9 @@ describe('sqb-connect-sqlite', function() {
     it('should select columns', function() {
       return metaData.select()
           .from('columns')
+          .where({table_name: 'AIRPORTS'})
           .execute().then(result => {
-            assert.equal(result.rows.length, 15);
+            assert.equal(result.rows.length, 13);
             assert.equal(result.rows[0].column_name, 'ID');
           });
     });
