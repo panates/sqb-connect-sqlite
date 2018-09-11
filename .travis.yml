@@ -10,7 +10,6 @@ cache:
     - node_modules
 before_install:
   - "npm install sqb --save"
-  - "npm install sqb-connect --save"
   - "test ! -d node_modules || npm prune"
   - "test ! -d node_modules || npm rebuild"
 script:
