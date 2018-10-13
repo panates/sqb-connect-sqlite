@@ -201,7 +201,7 @@ describe('sqb-connect-sqlite', function() {
       return metaData.select()
           .from('schemas')
           .execute().then(result => {
-            assert.equal(result.rows.length, 0);
+            assert(!result.rows);
           });
     });
 

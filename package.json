@@ -1,7 +1,7 @@
 {
   "name": "sqb-connect-sqlite",
   "description": "SQLite connection adapter for SQB",
-  "version": "3.1.0",
+  "version": "3.1.1",
   "author": "Panates Ltd.",
   "contributors": [
     "Eray Hanoglu <e.hanoglu@panates.com>"
@@ -21,19 +21,19 @@
   "dependencies": {
     "putil-promisify": "^1.2.0",
     "putil-taskqueue": "^2.1.0",
-    "putil-waterfall": "^2.0.2",
+    "putil-waterfall": "^2.0.3",
     "sqlite3": "^4.0.2"
   },
   "devDependencies": {
-    "babel-eslint": "^9.0.0",
-    "eslint": "^5.5.0",
+    "babel-eslint": "^10.0.1",
+    "eslint": "^5.6.1",
     "eslint-config-google": "^0.10.0",
-    "istanbul": "^0.4.5",
+    "nyc": "^13.0.1",
     "mocha": "^5.2.0",
-    "sqb": "^3.4.0"
+    "sqb": "^3.5.1"
   },
   "peerDependencies": {
-    "sqb": "^3.4.0"
+    "sqb": "^3.5.1"
   },
   "engines": {
     "node": ">= 6.0"
@@ -43,9 +43,12 @@
     "README.md",
     "lib/"
   ],
+  "nyc": {
+    "temp-directory": "./coverage/.nyc_output"
+  },
   "scripts": {
-    "test": "mocha --require test/support/env --reporter spec --bail --check-leaks test/",
-    "test-cov": "istanbul cover node_modules/mocha/bin/_mocha -- --require test/support/env --reporter dot --check-leaks test/",
-    "test-travis": "istanbul cover node_modules/mocha/bin/_mocha --report lcovonly -- --require test/support/env --reporter spec --check-leaks test/"
+    "test": "mocha --require ./test/support/env --reporter spec --bail --check-leaks test/",
+    "cover": "nyc --reporter html --reporter text npm run test",
+    "travis-cover": "nyc --reporter lcovonly npm run test"
   }
 }
